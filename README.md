@@ -18,10 +18,11 @@ The application was built using:
 
 # Screenshots
 <img align='left' src="UdemyWeatherApp/Assets.xcassets/emptyScreen.imageset/emptyScreen.png"  width="250">
-<img align='left' src="UdemyWeatherApp/Assets.xcassets/weatherScreen.imageset/weatherScreen.png"  width="250">
-<img align='right' src="UdemyWeatherApp/Assets.xcassets/weatherScreen2.imageset/weatherScreen2.png"  width="250">
+<img src="UdemyWeatherApp/Assets.xcassets/weatherScreen.imageset/weatherScreen.png"  width="250">
 
-<img align='right' src="UdemyWeatherApp/Assets.xcassets/cityScreen.imageset/cityScreen.png"  width="250">
+
+<img align='left' src="UdemyWeatherApp/Assets.xcassets/weatherScreen2.imageset/weatherScreen2.png"  width="250">
+<img src="UdemyWeatherApp/Assets.xcassets/cityScreen.imageset/cityScreen.png"  width="250">
 
 
 Cheers 🍿
