@@ -12,4 +12,15 @@ The application was built using:
 * Programmatic UI
 * Combine
 
+### Functionality
+* Selecting city through list of cities.
+* Search for weather based on your city
+
+# Screenshots
+<img align='left' src="UdemyWeatherApp/Assets.xcassets/emptyScreen.imageset/emptyScreen.png"  width="250">
+<img align='left' src="UdemyWeatherApp/Assets.xcassets/weatherScreen.imageset/weatherScreen.png"  width="250">
+
+<img src="UdemyWeatherApp/Assets.xcassets/cityScreen.imageset/cityScreen.png"  width="250">
+
+
 Cheers 🍿
