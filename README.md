@@ -24,5 +24,6 @@ The application was built using:
 <img align='left' src="UdemyWeatherApp/Assets.xcassets/weatherScreen2.imageset/weatherScreen2.png"  width="250">
 <img src="UdemyWeatherApp/Assets.xcassets/cityScreen.imageset/cityScreen.png"  width="250">
 
+<img src="UdemyWeatherApp/Assets.xcassets/cityScreen2.imageset/cityScreen2.png"  width="250">
 
 Cheers 🍿
