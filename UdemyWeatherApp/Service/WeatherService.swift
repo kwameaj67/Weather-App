@@ -18,6 +18,9 @@ class WeatherService {
             fatalError("Invalid URL")
         }
         return URLSession.shared.dataTaskPublisher(for: url)
+            .catch { error in
+                return Fail(error: error).eraseToAnyPublisher()
+            }
             .map { $0.data }
             .decode(type: WeatherResponse.self, decoder: JSONDecoder())
             .receive(on: RunLoop.main)  // publisher would be returned on the main UI thread
