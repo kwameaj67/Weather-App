@@ -67,14 +67,14 @@ class CityVC: UIViewController {
     }
     func getCities(){
         self.cancellables = cityService.fetchCity()
-            .sink(receiveCompletion: { _ in }, receiveValue: { response in
+            .sink(receiveCompletion: { _ in }, receiveValue: { [weak self] response in
+                guard let self = self else { return }
                 if (!response.data.isEmpty){
                     self.loader.stopAnimating()
                     self.cityListView.isHidden = false
                     print("cities: \(response.data.count)")
                     self.cities = response.data
                 }
-                
             })
     }
 
