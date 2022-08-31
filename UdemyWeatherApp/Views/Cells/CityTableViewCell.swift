@@ -41,7 +41,7 @@ class CityTableViewCell: UITableViewCell {
     
     func setup(for item: City){
         guard let city = item.city , let country = item.country else { return }
-            cityLabel.text = "\(city), "
+        cityLabel.text = "\(city.lowercased()), "
             countryLabel.text = country
     }
     
