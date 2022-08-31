@@ -8,9 +8,10 @@
 import UIKit
 import Combine
 
-class WeatherVC: UIViewController {
+class WeatherVC: UIViewController, UITextFieldDelegate {
 
     private var cancellable: AnyCancellable?
+    private var publisherCancellables = Set<AnyCancellable>()
     private let weatherService: WeatherService = WeatherService()
     private var selectedCity: String = ""
     
@@ -23,6 +24,7 @@ class WeatherVC: UIViewController {
         setupNavBar()
         getDate()
         setupPublishers()
+       
     }
     let container: UIStackView = {
         let sv = UIStackView(frame: .zero)
@@ -126,44 +128,40 @@ class WeatherVC: UIViewController {
     func getWeatherConditionImage(condition: String) -> UIImage {
         return (UIImage(named: "\(condition)")?.withRenderingMode(.alwaysOriginal))!
     }
-    
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        setupPublishers()
+    }
     private func setupPublishers(){
         // publishes events as soon as we type into textField
         let inputPublisher = NotificationCenter.default.publisher(for: UITextField.textDidChangeNotification, object: self.citytextField)
         
-        self.cancellable = inputPublisher.compactMap { ($0.object as! UITextField).text?.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) }
+        self.cancellable =  inputPublisher.compactMap { ($0.object as! UITextField).text?.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) }
             .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
             .flatMap { city in
-                return self.weatherService.fetchWeather(city: self.selectedCity.isEmpty ? city : self.selectedCity)
+                return self.weatherService.fetchWeather(city: city)
                     .catch { _ in
                         Just(WeatherResponse.placeholder)
                     }
                     .map{ $0 }
             }
-            .sink { [self] response in
+            .sink { [weak self] response in
+                guard let self = self else { return }
                 print(response)
                 if let temp = response.main?.temp {
                     self.templabel.text = "\(Int(temp.rounded(.toNearestOrEven)))℃"
                     self.border.isHidden = false
                 }else{
-                    self.templabel.text = "--"
-                    self.humiditylabel.text = ""
-                    self.pressurelabel.text = ""
-                    self.windlabel.text = ""
-                    self.infolabel.text = ""
-                    self.border.isHidden = true
-                    self.weatherImage.image = nil
+                    self.hideElements()
                 }
                 if let desc = response.weather?[0].description {
-                    self.descLabel.text = "It's \(desc)"
+                    self.descLabel.text = "It's \(desc) in \(String(describing: self.citytextField.text!))"
                 }else{
-                    guard let text = citytextField.text else { return }
+                    guard let text = self.citytextField.text else { return }
                     if text.isEmpty {
                         self.descLabel.text = "Oops 🙊 Cannot get weather"
                     }else{
-                        self.descLabel.text = "Oops 🙊 Cannot get weather for \(String(describing:citytextField.text!))"
+                        self.descLabel.text = "Oops 🙊 Cannot get weather for \(String(describing:self.citytextField.text!))"
                     }
-                   
                 }
                 guard let humid = response.main?.humidity else { return }
                 guard let pressure = response.main?.pressure else { return }
@@ -182,7 +180,6 @@ class WeatherVC: UIViewController {
         self.present(vc, animated: true, completion: nil)
         vc.modalPresentationStyle = .fullScreen
         vc.selectCity = self
-      
     }
 
 }
@@ -190,29 +187,50 @@ class WeatherVC: UIViewController {
 
 extension WeatherVC: CitySelectionDelegate {
     func selectCity(city: String) {
-        citytextField.text = city
-        self.cancellable = weatherService.fetchWeather(city: city)
-                 .catch { _ in
+        selectedCity = city
+        weatherService.fetchWeather(city: city)
+            .catch { error in
                      Just(WeatherResponse.placeholder)
-                 }
-                 .sink { response in
-                     print(response)
-                     if let temp = response.main?.temp {
-                         self.templabel.text = "\(temp)℃"
-                     }else{
-                         self.templabel.text = "Error getting weather"
-                     }
-                     guard let humid = response.main?.humidity else { return }
-                     guard let pressure = response.main?.pressure else { return }
-                     guard let wind = response.wind?.speed else { return }
-                     guard let desc = response.weather?[0].main else { return }
-                     self.humiditylabel.text = "\(Int(humid.rounded(.toNearestOrEven)))% Precipitation"
-                     self.pressurelabel.text = "\(Int(pressure)) hPa"
-                     self.windlabel.text = "\(Int(wind))m/s Wind"
-                     self.infolabel.text = "\(desc)"
-                 }
+              }
+            .sink(receiveCompletion: { completion in
+                switch completion{
+                case .failure(let error):
+                    print("\(error.localizedDescription)")
+                case .finished:
+                    print("done")
+                }
+            }, receiveValue: { [weak self] response in
+                guard let self = self else { return }
+                print(response)
+                if let temp = response.main?.temp {
+                    self.templabel.text = "\(Int(temp.rounded(.toNearestOrEven)))℃"
+                }
+                if let desc = response.weather?[0].description {
+                    self.descLabel.text = "It's \(desc) in \(self.selectedCity.lowercased())"
+                }else{
+                    self.descLabel.text = "Oops 🙊 Cannot get weather for \(city)"
+                    self.hideElements()
+                }
+                guard let humid = response.main?.humidity else { return }
+                guard let pressure = response.main?.pressure else { return }
+                guard let wind = response.wind?.speed else { return }
+                guard let desc = response.weather?[0].main else { return }
+                self.humiditylabel.text = "\(Int(humid.rounded(.toNearestOrEven)))% Precipitation"
+                self.pressurelabel.text = "\(Int(pressure)) hPa"
+                self.windlabel.text = "\(Int(wind))m/s Wind"
+                self.infolabel.text = "\(desc)"
+                self.weatherImage.image = self.getWeatherConditionImage(condition: "\(desc.lowercased())")
+            }).store(in: &publisherCancellables)
     }
-    
+    func hideElements(){
+        self.templabel.text = "--"
+        self.humiditylabel.text = ""
+        self.pressurelabel.text = ""
+        self.windlabel.text = ""
+        self.infolabel.text = ""
+        self.border.isHidden = true
+        self.weatherImage.image = nil
+    }
     
     private class TextField: UITextField{
         override func editingRect(forBounds bounds: CGRect) -> CGRect {
@@ -256,7 +274,7 @@ extension WeatherVC: CitySelectionDelegate {
             
             container.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             container.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            container.heightAnchor.constraint(equalToConstant: 300.0),
+            container.heightAnchor.constraint(equalToConstant: 300),
             
             border.bottomAnchor.constraint(equalTo: pressurelabel.topAnchor,constant: -20),
             border.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 30),
